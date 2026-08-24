@@ -544,7 +544,8 @@ jobs:
           - app-schema
           - app-a-b
           - app-c-a-l
-          - app-c-m-r
+          - app-c-m-o
+          - app-c-p-r
           - app-c-s-z
           - app-c-other
           - app-d-r
@@ -692,7 +693,8 @@ jobs:
           - app-schema
           - app-a-b
           - app-c-a-l
-          - app-c-m-r
+          - app-c-m-o
+          - app-c-p-r
           - app-c-s-z
           - app-c-other
           - app-d-r
@@ -1597,7 +1599,10 @@ jobs:
     name: Policy
     needs: lint
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Full policy regenerates and validates the runtime Schema several times.
+    # Keep job-level headroom for large reviewed command-surface additions;
+    # individual policy gates retain their own fail-closed checks.
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

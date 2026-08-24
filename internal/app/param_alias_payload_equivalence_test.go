@@ -153,7 +153,7 @@ var paramAliasCompleteCommands = map[string][]string{
 	"devdoc article search":                    {"devdoc", "article", "search", "--query", "fixture", "--page", "2", "--size", "7"},
 	"ding +receiver-status":                    {"ding", "+receiver-status", "--ding-id", "ding-1"},
 	"ding message receiver-status":             {"ding", "message", "receiver-status", "--ding-id", "ding-1"},
-	"ding message send":                        {"ding", "message", "send", "--robot-code", "robot-1", "--content", "fixture", "--users", "user-1", "--yes"},
+	"ding message send":                        {"ding", "message", "send", "--robot-code", "robot-1", "--content", "fixture", "--users", "user-1"},
 	"doc +comment-create":                      {"doc", "+comment-create", "--node", "node-1", "--content", "fixture comment", "--yes"},
 	"doc +comment-list":                        {"doc", "+comment-list", "--node", "node-1", "--limit", "7", "--cursor", "cursor-1"},
 	"doc +comment-reply":                       {"doc", "+comment-reply", "--node", "node-1", "--comment-key", "comment-1", "--content", "fixture reply", "--yes"},
@@ -221,8 +221,8 @@ var paramAliasCompleteCommands = map[string][]string{
 	"drive search":                             {"drive", "search", "--query", "fixture", "--created-from", "1", "--created-to", "2", "--modified-from", "3", "--modified-to", "4", "--creator-uids", "user-1,user-2"},
 	"drive upload":                             {"drive", "upload", "--file", "../../go.mod", "--space-id", "space-1"},
 	"drive upload-info":                        {"drive", "upload-info", "--file-name", "fixture.txt", "--file-size", "7", "--space-id", "space-1"},
-	"mail +find-mail-user":                     {"mail", "+find-mail-user", "--query", "fixture", "--limit", "7"},
-	"mail folder update":                       {"mail", "folder", "update", "--email", "fixture@example.com", "--id", "folder-1", "--name", "Fixture Folder", "--yes"},
+	"mail +find-mail-user":                     {"mail", "+find-mail-user", "--query", "fixture", "--limit", "7", "--cursor", "cursor-1"},
+	"mail folder update":                       {"mail", "folder", "update", "--email", "fixture@example.com", "--id", "folder-1", "--name", "Fixture Folder"},
 	"mail message search":                      {"mail", "message", "search", "--email", "fixture@example.com", "--query", "subject:fixture"},
 	"mail thread list":                         {"mail", "thread", "list", "--email", "fixture@example.com", "--folder", "folder-1", "--limit", "7"},
 	"mail user search":                         {"mail", "user", "search", "--keyword", "fixture"},
@@ -231,12 +231,59 @@ var paramAliasCompleteCommands = map[string][]string{
 	"report list":                              {"report", "list", "--start", "2026-03-10T00:00:00+08:00", "--end", "2026-03-10T23:59:59+08:00"},
 }
 
-// paramAliasCandidateCompleteCommands contains complete invocations for the
-// reviewed Minutes/TODO/Wiki joint draft. Keeping candidate-only commands in a
-// separate map lets this test file land before the draft replaces the formal
+// paramAliasCandidateCompleteCommands contains complete invocations for
+// reviewed parameter-concept product drafts. Keeping candidate-only commands
+// in a separate map lets a test change land before a draft replaces the formal
 // param_concepts.json: inactive candidate templates are ignored, while every
 // command becomes mandatory as soon as one of its reviewed aliases is active.
 var paramAliasCandidateCompleteCommands = map[string][]string{
+	"attendance +check-record":           {"attendance", "+check-record", "--users", "user-1,user-2", "--start", "2026-03-10 00:00:00", "--end", "2026-03-10 23:59:59"},
+	"attendance +get-adjustment-rule":    {"attendance", "+get-adjustment-rule", "--adjustment-id", "adjustment-1"},
+	"attendance +get-approve-template":   {"attendance", "+get-approve-template", "--type", "leave"},
+	"attendance +get-checkin-record":     {"attendance", "+get-checkin-record", "--operator-corp-id", "corp-1", "--operator-staff-id", "staff-operator", "--staff-ids", "staff-1,staff-2", "--start", "2026-03-10 00:00:00", "--end", "2026-03-10 23:59:59"},
+	"attendance +get-leave-records":      {"attendance", "+get-leave-records", "--user", "user-1", "--start", "2026-03-01", "--end", "2026-03-31", "--leave-code", "annual_leave"},
+	"attendance +get-overtime-rule":      {"attendance", "+get-overtime-rule", "--overtime-id", "overtime-1"},
+	"attendance +get-schedule":           {"attendance", "+get-schedule", "--users", "user-1,user-2", "--start", "2026-03-10", "--end", "2026-03-11"},
+	"attendance +get-self-setting":       {"attendance", "+get-self-setting", "--user", "user-1", "--setting-scene", "checkRemind"},
+	"attendance +get-summary":            {"attendance", "+get-summary", "--user", "user-1", "--date", "2026-03-10", "--stats-type", "week"},
+	"attendance +list-approve":           {"attendance", "+list-approve", "--users", "user-1,user-2", "--types", "leave", "--start", "2026-03-01", "--end", "2026-03-31"},
+	"attendance +query-report-data":      {"attendance", "+query-report-data", "--users", "user-1,user-2", "--columns", "attendance_days,late_count", "--start", "2026-03-01", "--end", "2026-03-31"},
+	"attendance +search-adjustment-rule": {"attendance", "+search-adjustment-rule", "--query", "fixture", "--page", "2", "--limit", "7"},
+	"attendance +search-class":           {"attendance", "+search-class", "--filter-type", "name", "--query", "fixture"},
+	"attendance +search-group":           {"attendance", "+search-group", "--type", "FIXED"},
+	"attendance +search-overtime-rule":   {"attendance", "+search-overtime-rule", "--query", "fixture", "--page", "2", "--limit", "7"},
+	"ding +list":                         {"ding", "+list", "--cursor", "0", "--type", "ALL"},
+	"ding +recall-personal":              {"ding", "+recall-personal", "--id", "ding-1", "--yes"},
+	"ding +send-personal":                {"ding", "+send-personal", "--users", appFixtureCurrentDOpenID, "--content", "fixture", "--yes"},
+	"mail +contact-list":                 {"mail", "+contact-list", "--email", "fixture@example.com", "--limit", "7", "--cursor", "cursor-1"},
+	"mail +folder-list":                  {"mail", "+folder-list", "--email", "fixture@example.com", "--folder", "folder-1"},
+	"mail +message":                      {"mail", "+message", "--email", "fixture@example.com", "--id", "message-1"},
+	"mail +messages":                     {"mail", "+messages", "--email", "fixture@example.com", "--ids", "message-1,message-2"},
+	"mail +recent-mail":                  {"mail", "+recent-mail", "--limit", "7", "--cursor", "cursor-1"},
+	"mail +search-mail":                  {"mail", "+search-mail", "--query", "fixture", "--size", "7", "--cursor", "cursor-1"},
+	"mail +template-list":                {"mail", "+template-list", "--email", "fixture@example.com", "--limit", "7", "--cursor", "cursor-1"},
+	"mail +thread":                       {"mail", "+thread", "--email", "fixture@example.com", "--id", "thread-1"},
+	"mail +thread-list":                  {"mail", "+thread-list", "--email", "fixture@example.com", "--folder", "folder-1", "--cursor", "cursor-1"},
+	"mail +triage":                       {"mail", "+triage", "--query", "fixture", "--limit", "7", "--cursor", "cursor-1"},
+	"mail +unread-mail":                  {"mail", "+unread-mail", "--size", "7", "--cursor", "cursor-1"},
+	"mail +user-search":                  {"mail", "+user-search", "--keyword", "fixture", "--cursor", "cursor-1"},
+	"markdown create":                    {"markdown", "create", "--content", "# Fixture", "--name", "fixture.md", "--space-id", "space-1"},
+	"markdown diff":                      {"markdown", "diff", "--node", "node-1", "--version", "1", "--version2", "2", "--context", "3"},
+	"markdown fetch":                     {"markdown", "fetch", "--node", "node-1", "--space-id", "space-1", "--output", "/tmp/dws-markdown-fixture.md"},
+	"markdown overwrite":                 {"markdown", "overwrite", "--node", "node-1", "--content", "# Fixture", "--name", "fixture.md", "--space-id", "space-1", "--yes"},
+	"markdown patch":                     {"markdown", "patch", "--node", "node-1", "--pattern", "old", "--content", "new", "--regex", "--space-id", "space-1", "--yes"},
+	"oa +list-cc":                        {"oa", "+list-cc", "--page", "2"},
+	"oa +list-executed":                  {"oa", "+list-executed", "--limit", "7", "--page", "2"},
+	"oa +list-forms":                     {"oa", "+list-forms", "--cursor", "2"},
+	"oa +list-pending":                   {"oa", "+list-pending", "--start", "1773072000000", "--end", "1773158399000", "--page", "2"},
+	"oa +list-submitted":                 {"oa", "+list-submitted", "--page", "2"},
+	"oa +my-initiated":                   {"oa", "+my-initiated", "--page", "2"},
+	"report +outbox-list":                {"report", "+outbox-list", "--size", "7"},
+	"report +report-latest":              {"report", "+report-latest", "--keyword", "Fixture", "--start", "2026-03-01T00:00:00+08:00", "--end", "2026-03-10T00:00:00+08:00"},
+	"report +template-search":            {"report", "+template-search", "--query", "fixture"},
+	"sheet +list-sheets":                 {"sheet", "+list-sheets", "--node", "node-1"},
+	"sheet +read":                        {"sheet", "+read", "--node", "node-1", "--sheet-id", "Sheet1"},
+
 	"minutes +detail":             {"minutes", "+detail", "--ids", "u1,u2"},
 	"minutes +latest":             {"minutes", "+latest", "--keyword", "fixture"},
 	"minutes +list-all":           {"minutes", "+list-all", "--limit", "7"},
@@ -296,6 +343,20 @@ var paramAliasCandidateCompleteCommands = map[string][]string{
 // that case the shared command template above cannot contain every canonical
 // flag at once, so select a fixture-specific complete invocation here.
 var paramAliasCompleteCommandVariants = map[string]map[string][]string{
+	"markdown create": {
+		"file": {"markdown", "create", "--file", "../../README.md", "--name", "fixture.md", "--space-id", "space-1"},
+	},
+	"markdown diff": {
+		"file": {"markdown", "diff", "--node", "node-1", "--file", "../../README.md", "--context", "3"},
+	},
+	"markdown overwrite": {
+		"file":    {"markdown", "overwrite", "--node", "node-1", "--file", "../../README.md", "--name", "fixture.md", "--space-id", "space-1", "--yes"},
+		"dry-run": {"markdown", "overwrite", "--node", "node-1", "--content", "# Fixture", "--name", "fixture.md", "--space-id", "space-1", "--dry-run"},
+	},
+	"markdown patch": {
+		"dry-run": {"markdown", "patch", "--node", "node-1", "--pattern", "old", "--content", "new", "--regex", "--dry-run"},
+	},
+
 	"doc +copy": {
 		"folder":    {"doc", "+copy", "--node", "node-1", "--folder", "folder-1", "--yes"},
 		"workspace": {"doc", "+copy", "--node", "node-1", "--workspace", "workspace-1", "--yes"},
@@ -967,6 +1028,121 @@ func assertParamAliasCannotBypassConfirmation(t *testing.T, aliasArgs []string) 
 	if len(caller.calls) != 0 {
 		t.Fatalf("unconfirmed Calendar alias crossed the transport boundary: args=%v calls=%#v", unconfirmedArgs, caller.calls)
 	}
+}
+
+// TestCrossPlatformCoverageEightProductTemplatedParamAliasesCannotBypassConfirmation
+// exercises every distinct reviewed mutating complete-command template in the
+// eight-product Shortcut expansion. The fixture gate already proves every
+// alias resolves through PreParse; this gate removes the confirmation flag
+// from one active alias invocation per distinct template and requires the
+// runtime boundary to stop it before the first transport call. An explicit
+// --dry-run is a reviewed preview path and must not carry a bypass flag.
+func TestCrossPlatformCoverageEightProductTemplatedParamAliasesCannotBypassConfirmation(t *testing.T) {
+	concepts, err := cli.LoadParamConcepts()
+	if err != nil {
+		t.Fatalf("LoadParamConcepts() error = %v", err)
+	}
+
+	requiredTemplates := make(map[string]bool)
+	coveredTemplates := make(map[string]bool)
+	for _, fixture := range concepts.Fixture {
+		if strings.HasPrefix(fixture.Expect, "did-you-mean:") {
+			continue
+		}
+		product, _, _ := strings.Cut(fixture.Command, " ")
+		switch product {
+		case "attendance", "mail", "oa", "ding", "report", "sheet", "whiteboard", "markdown":
+		default:
+			continue
+		}
+		complete, ok := paramAliasCompleteCommand(fixture.Command, fixture.Expect)
+		if !ok {
+			continue
+		}
+		_, yesCount := removeExactArg(complete, "--yes")
+		_, userSayYesCount := removeExactArg(complete, "--user-say-yes")
+		confirmationCount := yesCount + userSayYesCount
+		confirmationArg := "--yes"
+		if userSayYesCount == 1 {
+			confirmationArg = "--user-say-yes"
+		}
+		_, dryRunCount := removeExactArg(complete, "--dry-run")
+		if dryRunCount > 1 {
+			t.Errorf("template must contain --dry-run at most once: command=%q args=%v", fixture.Command, complete)
+			continue
+		}
+		if meta, exists := cli.ResolveMeta(fixture.Command); exists {
+			switch meta.Safety.Confirmation {
+			case "user_required":
+				if dryRunCount == 1 {
+					if confirmationCount != 0 {
+						t.Errorf("Schema-confirmed dry-run template must not contain a confirmation bypass flag: command=%q args=%v", fixture.Command, complete)
+					}
+					continue
+				}
+				if confirmationCount != 1 {
+					t.Errorf("Schema-confirmed template must contain exactly one reviewed confirmation flag: command=%q confirmation=%q args=%v", fixture.Command, meta.Safety.Confirmation, complete)
+					continue
+				}
+			case "not_required":
+				if confirmationCount != 0 {
+					t.Errorf("Schema-unconfirmed template must not contain a confirmation bypass flag: command=%q confirmation=%q args=%v", fixture.Command, meta.Safety.Confirmation, complete)
+					continue
+				}
+			}
+		}
+		if confirmationCount == 0 {
+			continue
+		}
+		if confirmationCount != 1 {
+			t.Errorf("confirmation template must contain exactly one reviewed confirmation flag: command=%q args=%v", fixture.Command, complete)
+			continue
+		}
+
+		templateKey := fixture.Command + "\x00" + strings.Join(complete, "\x00")
+		requiredTemplates[templateKey] = true
+		if coveredTemplates[templateKey] {
+			continue
+		}
+		aliasArgs, replacements := replaceLongFlag(complete, fixture.Expect, fixture.Emitted)
+		if replacements != 1 {
+			t.Errorf("confirmation template for %q/%q must contain canonical --%s exactly once; replacements=%d args=%v", fixture.Command, fixture.Emitted, fixture.Expect, replacements, complete)
+			continue
+		}
+		coveredTemplates[templateKey] = true
+		t.Run(fixture.Command+"/"+fixture.Emitted, func(t *testing.T) {
+			assertTemplatedParamAliasCannotBypassConfirmation(t, fixture.Command, confirmationArg, aliasArgs)
+		})
+	}
+
+	if len(requiredTemplates) == 0 {
+		t.Fatal("reviewed complete-command templates contain no confirmation cases")
+	}
+	if len(coveredTemplates) != len(requiredTemplates) {
+		t.Fatalf("templated confirmation coverage = %d, want %d", len(coveredTemplates), len(requiredTemplates))
+	}
+}
+
+func assertTemplatedParamAliasCannotBypassConfirmation(t *testing.T, command, confirmationArg string, aliasArgs []string) {
+	t.Helper()
+	unconfirmedArgs, removals := removeExactArg(aliasArgs, confirmationArg)
+	if removals != 1 {
+		t.Fatalf("confirmation template must contain %s exactly once; removals=%d args=%v", confirmationArg, removals, aliasArgs)
+	}
+
+	caller := &paramAliasCaptureCaller{}
+	ctx, err := executeParamAliasPayloadE2E(t, caller, unconfirmedArgs...)
+	if ctx == nil {
+		t.Fatal("unconfirmed alias command skipped PreParse")
+	}
+	var appErr *apperrors.Error
+	if errors.As(err, &appErr) && appErr.Reason == "confirmation_required" {
+		if len(caller.calls) != 0 {
+			t.Fatalf("unconfirmed alias crossed the transport boundary before confirmation: args=%v calls=%#v", unconfirmedArgs, caller.calls)
+		}
+		return
+	}
+	t.Fatalf("unconfirmed alias command error = %#v, want confirmation_required\ncommand=%q args=%v calls=%#v", err, command, unconfirmedArgs, caller.calls)
 }
 
 func assertParamAliasFinalPayloadEquivalent(t *testing.T, command string, canonicalArgs, aliasArgs []string) {

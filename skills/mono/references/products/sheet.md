@@ -218,8 +218,8 @@ Flags:
 
 | Shortcut | 风险 | 适用场景 |
 |---|---|---|
-| `dws sheet +list-sheets` | read | 获取表格文档中全部工作表列表 |
-| `dws sheet +read` | read | 读取工作表指定范围的结构化单元格数据 |
+| `dws sheet +list-sheets` | read | 严格列出在线电子表格的工作表，并可按完整标题精确筛选 |
+| `dws sheet +read` | read | 完整读取并严格校验在线电子表格范围；截断结果失败关闭 |
 <!-- VISIBLE_SHORTCUTS_END -->
 
 ## 意图表

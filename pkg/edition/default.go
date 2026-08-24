@@ -66,6 +66,36 @@ func openSupplementServers() []ServerInfo {
 			Endpoint: "https://mcp-gw.dingtalk.com/server/f69b54ada16c57b603c0e5e1c36f464ba73dcee28d64bb701ff2682c259c0cff",
 			Prefixes: []string{"recruit", "job"},
 		},
+		{
+			ID:       "edu-contact",
+			Name:     "家校通讯录",
+			Endpoint: "https://mcp-gw.dingtalk.com/server/d24759cc1c6e424e2de4e9901ea0202136e6707991ffc33b473878ec1cd688a2",
+			Prefixes: []string{"edu-contact", "edu"},
+		},
+		{
+			ID:       "edu-group",
+			Name:     "家校群",
+			Endpoint: "https://mcp-gw.dingtalk.com/server/14624b71ac9bc1a03b1b60e5b0403a48b346361f86cc9f555f98f89eb383875a",
+			Prefixes: []string{"edu-group"},
+		},
+		{
+			ID:       "edu-app",
+			Name:     "家校应用",
+			Endpoint: "https://mcp-gw.dingtalk.com/server/905eef591d16e2a1d95b235bcc780ce2fadb6ebe1f25648a279f8a2d97907a1e",
+			Prefixes: []string{"edu-app"},
+		},
+		{
+			ID:       "edu-familygroup",
+			Name:     "家庭群",
+			Endpoint: "https://mcp-gw.dingtalk.com/server/1cd153fb5296df340507c3e9ee20c938f9feeefec3147e9cc32317032f1a2944",
+			Prefixes: []string{"edu-familygroup"},
+		},
+		{
+			ID:       "college-contact",
+			Name:     "高校通讯录",
+			Endpoint: "https://mcp-gw.dingtalk.com/server/45bb310b388b9c39e0b80e08236782880cb51ad536e1292f9a40933c428a7474",
+			Prefixes: []string{"college-contact"},
+		},
 	}
 }
 

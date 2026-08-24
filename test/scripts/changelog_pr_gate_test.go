@@ -1106,6 +1106,9 @@ func TestChangelogPRFastPathWorkflowContract(t *testing.T) {
 		t.Fatal("Code Admission workflow missing Policy job boundaries")
 	}
 	policyJob := admission[policyStart:policyEnd]
+	if !strings.Contains(policyJob, "timeout-minutes: 15") {
+		t.Error("Policy job must retain enough headroom for full Schema policy validation")
+	}
 	requirePolicyEnv := func(step, nextStep string) {
 		t.Helper()
 		start := strings.Index(policyJob, "      - name: "+step+"\n")

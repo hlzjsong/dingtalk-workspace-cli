@@ -176,15 +176,17 @@ var Fetch = shortcut.Shortcut{
 	Command:     "+fetch",
 	Product:     productDoc,
 	Description: "读取完整或局部文档内容，并按 detail 控制保真度",
-	Intent:      "当用户要按 node/URL 直接读取在线文字文档，或只知道唯一标题并希望一次完成解析和读取时使用；支持 outline/range/section/keyword/tags 局部内容用于精确编辑和评论。",
+	Intent:      "当用户要按 node/URL 直接读取在线文字文档，或只知道唯一标题并希望一次完成解析和读取时使用；支持 outline/range/section/keyword/tags 局部内容用于精确编辑和评论；互联网公开文档（含密码保护）用 --password 提供访问密码，读历史版本用 --version 指定版本号（0 表示初始版本）。",
 	Risk:        shortcut.RiskRead,
 	Safety:      contract.SafetySpec{Effect: "read", Risk: "low", Confirmation: "not_required", Idempotency: "idempotent"},
 	Contract: docContract(
 		"+fetch", "读取完整或局部文档内容，并按 detail 控制保真度",
-		"当用户要按 node/URL 直接读取在线文字文档，或只知道唯一标题并希望一次完成解析和读取时使用；支持 outline/range/section/keyword/tags 局部内容用于精确编辑和评论。",
+		"当用户要按 node/URL 直接读取在线文字文档，或只知道唯一标题并希望一次完成解析和读取时使用；支持 outline/range/section/keyword/tags 局部内容用于精确编辑和评论；互联网公开文档（含密码保护）用 --password 提供访问密码，读历史版本用 --version 指定版本号（0 表示初始版本）。",
 		[]string{`dws doc +fetch --node <DOC_ID>`, `dws doc +fetch --query "项目周报" --scope keyword --keyword "结论"`},
 		contract.ParamDecl{Name: "node", Property: "nodeId"},
 		contract.ParamDecl{Name: "query", Property: "keyword"},
+		contract.ParamDecl{Name: "password", Property: "password"},
+		contract.ParamDecl{Name: "version", Property: "historyVersion"},
 	),
 	Flags: []shortcut.Flag{
 		{Name: "node", Type: shortcut.FlagString, Desc: "文档 ID 或 URL；" + fetchTargetConstraint},
@@ -198,12 +200,17 @@ var Fetch = shortcut.Shortcut{
 		{Name: "context-before", Type: shortcut.FlagInt, Desc: "关键词命中前的上下文字符数"},
 		{Name: "context-after", Type: shortcut.FlagInt, Desc: "关键词命中后的上下文字符数"},
 		{Name: "max-depth", Type: shortcut.FlagInt, Desc: "outline/section 最大深度"},
-		{Name: "revision", Type: shortcut.FlagInt, Desc: "只接受当前最新版；历史 revision 暂不支持"},
+		{Name: "password", Type: shortcut.FlagString, Desc: "互联网公开文档开启密码保护时的访问密码；普通文档无需传入"},
+		{Name: "revision", Type: shortcut.FlagInt, Desc: "不支持；revision 是文档编辑版本号（JSONML 读取响应返回、供 +update --expected-revision 条件写使用），不是历史版本号"},
+		{Name: "version", Type: shortcut.FlagInt, Desc: "读取指定历史版本(版本号从 doc +version-list 获取, 0 表示初始版本, 需要文档编辑权限)；缺省读最新版"},
 	},
 	Tips: []string{`dws doc +fetch --node <DOC_ID>`, `dws doc +fetch --query "项目周报" --scope keyword --keyword "结论"`},
 	Validate: func(rt *shortcut.RuntimeContext) error {
 		if rt.Changed("revision") {
-			return apperrors.NewValidation("HISTORICAL_READ_UNSUPPORTED: 当前接口不能读取指定历史 revision")
+			return apperrors.NewValidation("--revision 不支持：revision 是文档编辑版本号（doc read --content-format jsonml 响应返回，供 doc +update --expected-revision 条件写使用），不是历史版本号；读历史版本请用 --version")
+		}
+		if rt.Changed("version") && rt.Int("version") < 0 {
+			return apperrors.NewValidation("--version 必须为非负整数历史版本号（0 表示初始版本，从 doc +version-list 获取）")
 		}
 		if rt.Str("scope") == "keyword" && rt.Str("keyword") == "" {
 			return apperrors.NewValidation("--scope keyword 时必须提供 --keyword")
@@ -239,6 +246,12 @@ var Fetch = shortcut.Shortcut{
 		}
 		if rt.Changed("max-depth") {
 			params["maxDepth"] = rt.Int("max-depth")
+		}
+		if rt.Changed("version") {
+			params["historyVersion"] = rt.Int("version")
+		}
+		if value := rt.Str("password"); value != "" {
+			params["password"] = value
 		}
 		data, err := rt.CallMCPData(productDoc, "get_document_content", params)
 		if err != nil {

@@ -3,17 +3,22 @@ package scripts_test
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 )
 
 var expectedPackagedSkillTargets = []string{
@@ -91,6 +96,350 @@ func TestPackageManagerVersionVerificationReadsRawBinary(t *testing.T) {
 	if strings.Contains(script, "HOME_SKILL_TARGETS=") {
 		t.Fatal("package-manager verifier still declares the legacy mono target contract")
 	}
+}
+
+func TestNPMWrapperForwardsSIGTERMToVendor(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX signal forwarding contract")
+	}
+	nodePath, err := exec.LookPath("node")
+	if err != nil {
+		t.Skip("node is required to exercise the npm wrapper")
+	}
+
+	root := t.TempDir()
+	binDir := filepath.Join(root, "bin")
+	vendorDir := filepath.Join(root, "vendor")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(vendorDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	wrapperSource := filepath.Join("..", "..", "build", "npm", "bin", "dws.js")
+	wrapperData, err := os.ReadFile(wrapperSource)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wrapperPath := filepath.Join(binDir, "dws.js")
+	if err := os.WriteFile(wrapperPath, wrapperData, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	pidPath := filepath.Join(root, "child.pid")
+	signalPath := filepath.Join(root, "child.signal")
+	vendorPath := filepath.Join(vendorDir, "dws")
+	vendorScript := "#!/bin/sh\n" +
+		"printf '%s' \"$$\" > \"$DWS_TEST_CHILD_PID_FILE\"\n" +
+		"trap 'printf TERM > \"$DWS_TEST_SIGNAL_FILE\"; exit 0' TERM\n" +
+		"while :; do sleep 0.1; done\n"
+	if err := os.WriteFile(vendorPath, []byte(vendorScript), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command(nodePath, wrapperPath)
+	cmd.Env = append(os.Environ(),
+		"DWS_TEST_CHILD_PID_FILE="+pidPath,
+		"DWS_TEST_SIGNAL_FILE="+signalPath,
+	)
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	childPID := waitForPIDFile(t, pidPath)
+	t.Cleanup(func() {
+		_ = exec.Command("kill", "-TERM", strconv.Itoa(childPID)).Run()
+	})
+	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		t.Fatalf("signal npm wrapper: %v", err)
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("signal-terminated npm wrapper returned success")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("npm wrapper did not exit after SIGTERM")
+	}
+
+	signalData, err := os.ReadFile(signalPath)
+	if err != nil {
+		t.Fatalf("vendor did not record SIGTERM: %v", err)
+	}
+	if got := strings.TrimSpace(string(signalData)); got != "TERM" {
+		t.Fatalf("vendor signal = %q, want TERM", got)
+	}
+	if err := exec.Command("kill", "-0", strconv.Itoa(childPID)).Run(); err == nil {
+		t.Fatalf("vendor process %d is still running after npm wrapper exited", childPID)
+	}
+}
+
+func TestNPMWrapperForwardsForegroundGroupSIGINTToVendorGroupOnce(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX foreground process-group signal contract")
+	}
+	nodePath, err := exec.LookPath("node")
+	if err != nil {
+		t.Skip("node is required to exercise the npm wrapper")
+	}
+
+	root := t.TempDir()
+	binDir := filepath.Join(root, "bin")
+	vendorDir := filepath.Join(root, "vendor")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(vendorDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	wrapperData, err := os.ReadFile(filepath.Join("..", "..", "build", "npm", "bin", "dws.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wrapperPath := filepath.Join(binDir, "dws.js")
+	if err := os.WriteFile(wrapperPath, wrapperData, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	pidPath := filepath.Join(root, "child.pid")
+	signalPath := filepath.Join(root, "child.signal")
+	descendantPIDPath := filepath.Join(root, "descendant.pid")
+	descendantSignalPath := filepath.Join(root, "descendant.signal")
+	vendorPath := filepath.Join(vendorDir, "dws")
+	vendorScript := `#!/usr/bin/env node
+"use strict";
+const fs = require("fs");
+const childProcess = require("child_process");
+const descendantSource = String.raw` + "`" + `
+"use strict";
+const fs = require("fs");
+let exiting = false;
+process.on("SIGINT", () => {
+  fs.appendFileSync(process.env.DWS_TEST_DESCENDANT_SIGNAL_FILE, "INT\n");
+  if (!exiting) {
+    exiting = true;
+    setTimeout(() => process.exit(0), 250);
+  }
+});
+fs.writeFileSync(process.env.DWS_TEST_DESCENDANT_PID_FILE, String(process.pid));
+setInterval(() => {}, 1000);
+` + "`" + `;
+childProcess.spawn(process.execPath, ["-e", descendantSource], {
+  stdio: "inherit",
+  env: process.env,
+});
+let exiting = false;
+process.on("SIGINT", () => {
+  fs.appendFileSync(process.env.DWS_TEST_SIGNAL_FILE, "INT\n");
+  if (!exiting) {
+    exiting = true;
+    setTimeout(() => process.exit(0), 250);
+  }
+});
+fs.writeFileSync(process.env.DWS_TEST_CHILD_PID_FILE, String(process.pid));
+setInterval(() => {}, 1000);
+`
+	if err := os.WriteFile(vendorPath, []byte(vendorScript), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command(nodePath, wrapperPath)
+	cmd.Env = append(os.Environ(),
+		"DWS_TEST_CHILD_PID_FILE="+pidPath,
+		"DWS_TEST_SIGNAL_FILE="+signalPath,
+		"DWS_TEST_DESCENDANT_PID_FILE="+descendantPIDPath,
+		"DWS_TEST_DESCENDANT_SIGNAL_FILE="+descendantSignalPath,
+	)
+	configureIsolatedProcessGroup(cmd)
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	childPID := waitForPIDFile(t, pidPath)
+	descendantPID := waitForPIDFile(t, descendantPIDPath)
+	t.Cleanup(func() {
+		_ = exec.Command("kill", "-TERM", strconv.Itoa(childPID)).Run()
+		_ = exec.Command("kill", "-TERM", strconv.Itoa(descendantPID)).Run()
+	})
+	wrapperGroup, err := processGroupID(cmd.Process.Pid)
+	if err != nil {
+		t.Fatalf("wrapper process group: %v", err)
+	}
+	childGroup, err := processGroupID(childPID)
+	if err != nil {
+		t.Fatalf("vendor process group: %v", err)
+	}
+	if childGroup == wrapperGroup {
+		t.Fatalf("vendor process group = wrapper process group %d; foreground signal would be duplicated", childGroup)
+	}
+	descendantGroup, err := processGroupID(descendantPID)
+	if err != nil {
+		t.Fatalf("descendant process group: %v", err)
+	}
+	if descendantGroup != childGroup {
+		t.Fatalf("descendant process group = %d, want vendor process group %d", descendantGroup, childGroup)
+	}
+
+	if err := signalProcessGroup(wrapperGroup, syscall.SIGINT); err != nil {
+		t.Fatalf("signal foreground process group: %v", err)
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("signal-terminated npm wrapper returned success")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("npm wrapper did not exit after foreground SIGINT")
+	}
+
+	signalData, err := os.ReadFile(signalPath)
+	if err != nil {
+		t.Fatalf("vendor did not record SIGINT: %v", err)
+	}
+	if got := strings.Fields(string(signalData)); len(got) != 1 || got[0] != "INT" {
+		t.Fatalf("vendor signals = %q, want exactly one INT", got)
+	}
+	descendantSignalData, err := os.ReadFile(descendantSignalPath)
+	if err != nil {
+		t.Fatalf("vendor descendant did not record SIGINT: %v", err)
+	}
+	if got := strings.Fields(string(descendantSignalData)); len(got) != 1 || got[0] != "INT" {
+		t.Fatalf("vendor descendant signals = %q, want exactly one INT", got)
+	}
+	waitForProcessExit(t, childPID, "vendor")
+	waitForProcessExit(t, descendantPID, "vendor descendant")
+}
+
+func TestNPMWrapperPreservesInteractiveTTY(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX controlling-terminal contract")
+	}
+	nodePath, err := exec.LookPath("node")
+	if err != nil {
+		t.Skip("node is required to exercise the npm wrapper")
+	}
+
+	root := t.TempDir()
+	binDir := filepath.Join(root, "bin")
+	vendorDir := filepath.Join(root, "vendor")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(vendorDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	wrapperData, err := os.ReadFile(filepath.Join("..", "..", "build", "npm", "bin", "dws.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wrapperPath := filepath.Join(binDir, "dws.js")
+	if err := os.WriteFile(wrapperPath, wrapperData, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	resultPath := filepath.Join(root, "interactive.result")
+	readyPath := filepath.Join(root, "interactive.ready")
+	vendorPath := filepath.Join(vendorDir, "dws")
+	vendorScript := "#!/bin/sh\n" +
+		"printf 'DWS prompt: ' > /dev/tty\n" +
+		"printf ready > \"$DWS_TEST_INTERACTIVE_READY\"\n" +
+		"IFS= read -r answer < /dev/tty\n" +
+		"printf '%s' \"$answer\" > \"$DWS_TEST_INTERACTIVE_RESULT\"\n"
+	if err := os.WriteFile(vendorPath, []byte(vendorScript), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command(nodePath, wrapperPath)
+	cmd.Env = append(os.Environ(),
+		"DWS_TEST_INTERACTIVE_RESULT="+resultPath,
+		"DWS_TEST_INTERACTIVE_READY="+readyPath,
+	)
+	terminal, err := startWithPTY(cmd)
+	if err != nil {
+		t.Fatalf("start npm wrapper with PTY: %v", err)
+	}
+	defer terminal.Close()
+	t.Cleanup(func() { _ = cmd.Process.Kill() })
+	var output bytes.Buffer
+	outputDone := make(chan struct{})
+	go func() {
+		_, _ = io.Copy(&output, terminal)
+		close(outputDone)
+	}()
+	waitForFile(t, readyPath)
+	if _, err := fmt.Fprintln(terminal, "confirmed"); err != nil {
+		t.Fatalf("write interactive input: %v", err)
+	}
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	var waitErr error
+	select {
+	case waitErr = <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("interactive npm wrapper did not exit after terminal input")
+	}
+	_ = terminal.Close()
+	<-outputDone
+	if waitErr != nil {
+		t.Fatalf("interactive npm wrapper: %v\noutput:\n%s", waitErr, output.String())
+	}
+	result, err := os.ReadFile(resultPath)
+	if err != nil {
+		t.Fatalf("interactive vendor did not record terminal input: %v\noutput:\n%s", err, output.String())
+	}
+	if got := strings.TrimSpace(string(result)); got != "confirmed" {
+		t.Fatalf("interactive input = %q, want confirmed\noutput:\n%s", got, output.String())
+	}
+}
+
+func waitForPIDFile(t *testing.T, path string) int {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		data, err := os.ReadFile(path)
+		if err == nil {
+			pid, parseErr := strconv.Atoi(strings.TrimSpace(string(data)))
+			if parseErr == nil && pid > 0 {
+				return pid
+			}
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	t.Fatalf("timed out waiting for vendor pid file %s", path)
+	return 0
+}
+
+func waitForFile(t *testing.T, path string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, err := os.Stat(path); err == nil {
+			return
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	t.Fatalf("timed out waiting for file %s", path)
+}
+
+func waitForProcessExit(t *testing.T, pid int, label string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if err := exec.Command("kill", "-0", strconv.Itoa(pid)).Run(); err != nil {
+			return
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	t.Fatalf("%s process %d is still running after npm wrapper exited", label, pid)
 }
 
 func TestPackageManagerVerifierCoversSpecificAndFallbackSkillRoots(t *testing.T) {

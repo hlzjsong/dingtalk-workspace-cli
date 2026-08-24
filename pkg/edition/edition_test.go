@@ -137,3 +137,43 @@ func TestOpenSupplementServersIncludesMCPMeta(t *testing.T) {
 		t.Fatal("openSupplementServers() missing explicitly wired recruit endpoint")
 	}
 }
+
+func TestCrossPlatformCoverageOpenSupplementServersIncludesEduEndpoints(t *testing.T) {
+	servers := openSupplementServers()
+	byID := make(map[string]ServerInfo, len(servers))
+	for _, s := range servers {
+		byID[s.ID] = s
+	}
+
+	edu := []struct {
+		id       string
+		endpoint string
+		prefixes []string
+	}{
+		{"edu-contact", "https://mcp-gw.dingtalk.com/server/d24759cc1c6e424e2de4e9901ea0202136e6707991ffc33b473878ec1cd688a2", []string{"edu-contact", "edu"}},
+		{"edu-group", "https://mcp-gw.dingtalk.com/server/14624b71ac9bc1a03b1b60e5b0403a48b346361f86cc9f555f98f89eb383875a", []string{"edu-group"}},
+		{"edu-app", "https://mcp-gw.dingtalk.com/server/905eef591d16e2a1d95b235bcc780ce2fadb6ebe1f25648a279f8a2d97907a1e", []string{"edu-app"}},
+		{"edu-familygroup", "https://mcp-gw.dingtalk.com/server/1cd153fb5296df340507c3e9ee20c938f9feeefec3147e9cc32317032f1a2944", []string{"edu-familygroup"}},
+		{"college-contact", "https://mcp-gw.dingtalk.com/server/45bb310b388b9c39e0b80e08236782880cb51ad536e1292f9a40933c428a7474", []string{"college-contact"}},
+	}
+
+	for _, want := range edu {
+		got, ok := byID[want.id]
+		if !ok {
+			t.Errorf("openSupplementServers() missing edu endpoint %q", want.id)
+			continue
+		}
+		if got.Endpoint != want.endpoint {
+			t.Errorf("%s endpoint = %q, want %q", want.id, got.Endpoint, want.endpoint)
+		}
+		if len(got.Prefixes) != len(want.prefixes) {
+			t.Errorf("%s prefixes length = %d, want %d", want.id, len(got.Prefixes), len(want.prefixes))
+			continue
+		}
+		for i, p := range want.prefixes {
+			if got.Prefixes[i] != p {
+				t.Errorf("%s prefixes[%d] = %q, want %q", want.id, i, got.Prefixes[i], p)
+			}
+		}
+	}
+}
