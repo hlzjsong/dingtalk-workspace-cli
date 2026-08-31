@@ -126,6 +126,18 @@ func NewOAuthProvider(configDir string, logger *slog.Logger) *OAuthProvider {
 	return p
 }
 
+// SetMCPClientID switches the provider to MCP-managed credentials using the
+// given server-issued client ID. The client secret stays server-side, so any
+// locally resolved credential pair is discarded. exchangeCode then routes
+// through the MCP OAuth endpoint because the runtime credential source is
+// marked MCP-sourced.
+func (p *OAuthProvider) SetMCPClientID(clientID string) {
+	p.clientID = strings.TrimSpace(clientID)
+	p.credentials = nil
+	p.credentialErr = nil
+	SetClientIDFromMCP(clientID)
+}
+
 func resolveOAuthCredentialPair(configDir string) (*AppCredentialPair, error) {
 	if pair, selected, err := credentialPairFromValues(runtimeCredentialValues()); selected || err != nil {
 		if err != nil {

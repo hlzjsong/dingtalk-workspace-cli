@@ -1282,6 +1282,7 @@ func TestCrossPlatformCoverageAuthCoveragePortableExchangeAndReset(t *testing.T)
 	oldAtomic := authAtomicWrite
 	oldRead := authReadFile
 	oldExchange := authOAuthExchange
+	oldFetchMCP := authExchangeFetchMCPClientID
 	oldDeleteAll := authDeleteAllTokenData
 	oldRemove := authRemove
 	oldDeleteConfig := authDeleteAppConfig
@@ -1295,6 +1296,7 @@ func TestCrossPlatformCoverageAuthCoveragePortableExchangeAndReset(t *testing.T)
 		authAtomicWrite = oldAtomic
 		authReadFile = oldRead
 		authOAuthExchange = oldExchange
+		authExchangeFetchMCPClientID = oldFetchMCP
 		authDeleteAllTokenData = oldDeleteAll
 		authRemove = oldRemove
 		authDeleteAppConfig = oldDeleteConfig
@@ -1433,6 +1435,8 @@ func TestCrossPlatformCoverageAuthCoveragePortableExchangeAndReset(t *testing.T)
 		t.Fatal("missing code should fail")
 	}
 	_ = exchange.Flags().Set("code", "code")
+	// Default mode is direct: no MCP fetch, exchange through the
+	// DingTalk userAccessToken endpoint.
 	authOAuthExchange = func(*authpkg.OAuthProvider, context.Context, string, string) (*authpkg.TokenData, error) {
 		return nil, errors.New("exchange")
 	}
@@ -1471,5 +1475,103 @@ func TestCrossPlatformCoverageAuthCoveragePortableExchangeAndReset(t *testing.T)
 	_, out, _ = authCoverageRoot(reset, "table", false)
 	if err := reset.RunE(reset, nil); err != nil || strings.Contains(out.String(), "重新登录") {
 		t.Fatalf("embedded reset = %q, %v", out.String(), err)
+	}
+}
+
+func TestAuthExchangeMCPMode(t *testing.T) {
+	oldFetch := authExchangeFetchMCPClientID
+	oldExchange := authOAuthExchange
+	defer func() {
+		authExchangeFetchMCPClientID = oldFetch
+		authOAuthExchange = oldExchange
+		authpkg.SetClientID("")
+	}()
+	t.Setenv("DWS_CONFIG_DIR", t.TempDir())
+
+	exchange := newAuthExchangeCommand(nil)
+	exchange.SetContext(context.Background())
+	if err := exchange.Flags().Set("code", "code"); err != nil {
+		t.Fatal(err)
+	}
+	if err := exchange.Flags().Set("mcp", "true"); err != nil {
+		t.Fatal(err)
+	}
+
+	// --mcp flag triggers MCP-managed credentials. A client ID fetch
+	// failure must propagate.
+	authExchangeFetchMCPClientID = func(context.Context, authpkg.LoginRegion) (string, error) {
+		return "", errors.New("mcp down")
+	}
+	if err := exchange.RunE(exchange, nil); err == nil || !strings.Contains(err.Error(), "failed to fetch client ID from MCP") {
+		t.Fatalf("mcp fetch failure = %v", err)
+	}
+
+	// An empty client ID from a successful MCP response must be rejected
+	// before any exchange is attempted.
+	authExchangeFetchMCPClientID = func(context.Context, authpkg.LoginRegion) (string, error) {
+		return "  ", nil
+	}
+	if err := exchange.RunE(exchange, nil); err == nil || !strings.Contains(err.Error(), "empty client ID") {
+		t.Fatalf("empty mcp client ID = %v", err)
+	}
+
+	// A successful MCP fetch must switch the provider to MCP-managed
+	// credentials before the exchange happens.
+	authExchangeFetchMCPClientID = func(context.Context, authpkg.LoginRegion) (string, error) {
+		return "mcp-client-id", nil
+	}
+	exchanged := false
+	authOAuthExchange = func(_ *authpkg.OAuthProvider, _ context.Context, code, uid string) (*authpkg.TokenData, error) {
+		exchanged = true
+		if !authpkg.IsClientIDFromMCP() {
+			t.Fatalf("IsClientIDFromMCP() = false, want true before exchange")
+		}
+		if got := authpkg.ClientID(); got != "mcp-client-id" {
+			t.Fatalf("ClientID() = %q, want mcp-client-id", got)
+		}
+		if code != "code" || uid != "" {
+			t.Fatalf("exchange args = %q, %q", code, uid)
+		}
+		return &authpkg.TokenData{CorpID: "ding"}, nil
+	}
+	if err := exchange.RunE(exchange, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !exchanged {
+		t.Fatal("exchange was not invoked")
+	}
+}
+
+func TestAuthExchangeDirectMode(t *testing.T) {
+	oldFetch := authExchangeFetchMCPClientID
+	oldExchange := authOAuthExchange
+	defer func() {
+		authExchangeFetchMCPClientID = oldFetch
+		authOAuthExchange = oldExchange
+		authpkg.SetClientID("")
+	}()
+	t.Setenv("DWS_CONFIG_DIR", t.TempDir())
+
+	// Default mode (no --mcp) is direct: no MCP fetch, provider uses
+	// locally resolved credentials.
+	fetchCalled := false
+	authExchangeFetchMCPClientID = func(context.Context, authpkg.LoginRegion) (string, error) {
+		fetchCalled = true
+		return "mcp-client-id", nil
+	}
+	direct := newAuthExchangeCommand(nil)
+	direct.SetContext(context.Background())
+	_ = direct.Flags().Set("code", "code")
+	authOAuthExchange = func(_ *authpkg.OAuthProvider, _ context.Context, code, uid string) (*authpkg.TokenData, error) {
+		if authpkg.IsClientIDFromMCP() {
+			t.Fatalf("IsClientIDFromMCP() = true, want direct mode")
+		}
+		return &authpkg.TokenData{CorpID: "ding"}, nil
+	}
+	if err := direct.RunE(direct, nil); err != nil {
+		t.Fatal(err)
+	}
+	if fetchCalled {
+		t.Fatal("MCP client ID fetch must not run in direct mode")
 	}
 }
