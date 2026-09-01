@@ -266,6 +266,36 @@ func SetClientIDFromMCP(id string) {
 	clientIDFromMCP = true
 }
 
+// RuntimeCredentialState captures the process-local runtime credential tuple.
+// It is used by callers that need to temporarily switch credential modes and
+// then restore the previous state exactly as it was.
+type RuntimeCredentialState struct {
+	ClientID     string
+	ClientSecret string
+	FromMCP      bool
+}
+
+// SnapshotRuntimeCredentialState returns the current runtime credential tuple.
+func SnapshotRuntimeCredentialState() RuntimeCredentialState {
+	clientMu.RLock()
+	defer clientMu.RUnlock()
+	return RuntimeCredentialState{
+		ClientID:     runtimeClientID,
+		ClientSecret: runtimeClientSecret,
+		FromMCP:      clientIDFromMCP,
+	}
+}
+
+// RestoreRuntimeCredentialState restores a previously captured runtime
+// credential tuple.
+func RestoreRuntimeCredentialState(state RuntimeCredentialState) {
+	clientMu.Lock()
+	defer clientMu.Unlock()
+	runtimeClientID = state.ClientID
+	runtimeClientSecret = state.ClientSecret
+	clientIDFromMCP = state.FromMCP
+}
+
 // SetClientCredentials atomically installs one complete direct-mode runtime
 // credential pair. It also clears any stale MCP source marker.
 func SetClientCredentials(id, secret string) {

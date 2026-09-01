@@ -1481,10 +1481,11 @@ func TestCrossPlatformCoverageAuthCoveragePortableExchangeAndReset(t *testing.T)
 func TestAuthExchangeMCPMode(t *testing.T) {
 	oldFetch := authExchangeFetchMCPClientID
 	oldExchange := authOAuthExchange
+	oldState := authpkg.SnapshotRuntimeCredentialState()
 	defer func() {
 		authExchangeFetchMCPClientID = oldFetch
 		authOAuthExchange = oldExchange
-		authpkg.SetClientID("")
+		authpkg.RestoreRuntimeCredentialState(oldState)
 	}()
 	t.Setenv("DWS_CONFIG_DIR", t.TempDir())
 
@@ -1539,6 +1540,47 @@ func TestAuthExchangeMCPMode(t *testing.T) {
 	}
 	if !exchanged {
 		t.Fatal("exchange was not invoked")
+	}
+}
+
+func TestAuthExchangeMCPModeRestoresRuntimeCredentials(t *testing.T) {
+	oldFetch := authExchangeFetchMCPClientID
+	oldExchange := authOAuthExchange
+	oldState := authpkg.SnapshotRuntimeCredentialState()
+	defer func() {
+		authExchangeFetchMCPClientID = oldFetch
+		authOAuthExchange = oldExchange
+		authpkg.RestoreRuntimeCredentialState(oldState)
+	}()
+	t.Setenv("DWS_CONFIG_DIR", t.TempDir())
+	authpkg.SetClientCredentials("previous-direct-client", "previous-direct-secret")
+
+	exchange := newAuthExchangeCommand(nil)
+	exchange.SetContext(context.Background())
+	if err := exchange.Flags().Set("code", "code"); err != nil {
+		t.Fatal(err)
+	}
+	if err := exchange.Flags().Set("mcp", "true"); err != nil {
+		t.Fatal(err)
+	}
+
+	authExchangeFetchMCPClientID = func(context.Context, authpkg.LoginRegion) (string, error) {
+		return "mcp-client-id", nil
+	}
+	authOAuthExchange = func(_ *authpkg.OAuthProvider, _ context.Context, _, _ string) (*authpkg.TokenData, error) {
+		if !authpkg.IsClientIDFromMCP() {
+			t.Fatal("expected MCP mode during exchange")
+		}
+		return &authpkg.TokenData{CorpID: "ding"}, nil
+	}
+	if err := exchange.RunE(exchange, nil); err != nil {
+		t.Fatal(err)
+	}
+	if state := authpkg.SnapshotRuntimeCredentialState(); state.ClientID != "previous-direct-client" || state.ClientSecret != "previous-direct-secret" || state.FromMCP {
+		t.Fatalf("runtime credentials were not restored: %+v", state)
+	}
+	if authpkg.IsClientIDFromMCP() {
+		t.Fatal("MCP marker should be cleared after exchange")
 	}
 }
 

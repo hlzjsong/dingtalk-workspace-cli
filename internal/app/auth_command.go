@@ -987,6 +987,9 @@ func newAuthExchangeCommand(caller edition.ToolCaller) *cobra.Command {
 			}
 			configureOAuthProviderCompatibility(provider, configDir)
 			if useMCP {
+				previousState := authpkg.SnapshotRuntimeCredentialState()
+				defer authpkg.RestoreRuntimeCredentialState(previousState)
+
 				mcpClientID, err := authExchangeFetchMCPClientID(exchangeCtx, provider.LoginRegion)
 				if err != nil {
 					return apperrors.NewAuth(fmt.Sprintf("failed to fetch client ID from MCP: %v", err))
@@ -995,9 +998,6 @@ func newAuthExchangeCommand(caller edition.ToolCaller) *cobra.Command {
 					return apperrors.NewAuth("MCP server returned an empty client ID")
 				}
 				provider.SetMCPClientID(mcpClientID)
-				// Clear the process-global MCP marker so an embedded host's
-				// later commands are not forced through the MCP credential path.
-				defer authpkg.SetClientID("")
 			}
 			tokenData, err := authOAuthExchange(provider, exchangeCtx, code, strings.TrimSpace(uid))
 			if err != nil {
