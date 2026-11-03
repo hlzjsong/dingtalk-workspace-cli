@@ -28,7 +28,7 @@ func TestCrossPlatformCoverageRegisterCommandsMergesExistingPATShortcutGroup(t *
 	if len(patGroups) != 1 {
 		t.Fatalf("top-level PAT groups = %d, want 1", len(patGroups))
 	}
-	for _, child := range []string{"+fixture", "chmod", "browser-policy"} {
+	for _, child := range []string{"+fixture", "chmod", "grant", "browser-policy"} {
 		if found, _, err := patGroups[0].Find([]string{child}); err != nil || found == nil || found.Name() != child {
 			t.Errorf("merged PAT child %q missing: found=%v err=%v", child, found, err)
 		}

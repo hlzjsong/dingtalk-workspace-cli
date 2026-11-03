@@ -40,10 +40,27 @@ dws pat chmod --products calendar,aitable --grant-type session --session-id <SES
 
 scope 格式为 `<product>.<entity>:<permission>`。`grant-type` 支持 `once`、`session`、`permanent`；`session` 模式必须提供 `--session-id`。使用 `--products`、`--product`、`--domains`、`--domain` 或 `--recommend` 批量展开 scope 时，先用 `--dry-run` 检查计划，用户明确确认后才可加 `--yes`。
 
+### 直接调用旧 grantAuth 接口
+
+用户明确要求调用旧 `grantAuth` 时，使用 `dws pat grant <scope>`。该命令只接受一个 scope，直接调用 `pat.grant`，兼容旧的 `个人授权` 工具名，不经过 `pat.batch_plan` 或 `pat.batch_grant`。`chmod` 即使只传一个 scope，也优先走批量接口。
+
+```bash
+# 预览单 scope 请求，不调用远端接口
+dws pat grant chat.message:list --grant-type once --dry-run --format json
+
+# 用户确认 scope、授权类型和应用后执行
+dws pat grant chat.message:list --grant-type once --yes --format json
+```
+
+`--grant-type` 支持 `once`、`session`、`permanent`，默认 `permanent`。`--agentCode` 指定授权应用，省略时读取 `DINGTALK_DWS_AGENTCODE`，仍为空则由服务端兜底。`session` 模式需要 `--session-id`，也可依次从 `DINGTALK_SESSION_ID`、`DWS_SESSION_ID`、`REWIND_SESSION_ID` 读取。
+
+该命令使用统一结果格式，`data` 包含 `tool`、`arguments`、`executed`；成功调用另含 `response`。预览的 `executed=false`；服务端失败或待用户确认不会被当作授权成功。实际接口可用性取决于当前环境是否发布旧授权工具。
+
 ## 意图判断
 
 用户说"PAT 授权时允许或禁止打开浏览器/配置浏览器授权策略" → `browser-policy`
 用户说"授予 Agent 行为权限/授权 scope/批量授权产品/一次性授权/会话授权/永久授权" → `chmod`
+用户明确说"直接调用旧 grantAuth/pat.grant/单个旧授权接口" → `grant`
 
 ## 注意事项
 

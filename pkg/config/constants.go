@@ -164,7 +164,7 @@ const (
 const (
 	// DefaultMCPBaseURL is the DingTalk MCP base URL.
 	// Override at runtime via ~/.dws/mcp_url file.
-	DefaultMCPBaseURL = "https://mcp.dingtalk.com"
+	DefaultMCPBaseURL = "https://pre-mcp.dingtalk.com"
 
 	// ManagedMCPURLRegionFileName records an MCP URL written automatically by
 	// login region selection, so a later region change does not delete a user's

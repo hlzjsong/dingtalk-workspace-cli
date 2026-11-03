@@ -1,0 +1,152 @@
+tool_name,dws_cmd,alt_cmds,product,rpc,note,status
+get_calendar,calendar book get,,calendar,get_calendar,,OK
+get_calendar_detail,calendar event get,,calendar,get_calendar_detail,,OK
+get_calendar_participants,calendar attendee list,,calendar,get_calendar_participants,,OK
+list_bases,aitable base list,aitable list,aitable,list_bases,,OK
+search_bases,aitable base search,aitable search,aitable,search_bases,,OK
+get_base,aitable base get,aitable info,aitable,get_base,,OK
+create_base,aitable base create,aitable create,aitable,create_base,,OK
+update_base,aitable base update,,aitable,update_base,,OK
+delete_base,aitable base delete,,aitable,delete_base,,OK
+get_tables,aitable table list,aitable table get,aitable,get_tables,,OK
+create_table,aitable table create,,aitable,create_table,,OK
+update_table,aitable table update,,aitable,update_table,,OK
+delete_table,aitable table delete,,aitable,delete_table,,OK
+get_fields,aitable field list,aitable field get,aitable,get_fields,,OK
+create_fields,aitable field create,,aitable,create_fields,,OK
+update_field,aitable field update,,aitable,update_field,,OK
+delete_field,aitable field delete,aitable form questions delete,aitable,delete_field,,OK
+query_records,aitable record query,aitable record get,aitable,query_records,,OK
+create_records,aitable record create,,aitable,create_records,,OK
+update_records,aitable record update,,aitable,update_records,,OK
+delete_records,aitable record delete,,aitable,delete_records,,OK
+search_templates,aitable template search,,aitable,search_templates,,OK
+prepare_attachment_upload,aitable attachment upload,,aitable,prepare_attachment_upload,,OK
+export_data,aitable export data,,aitable,export_data,,OK
+prepare_import_upload,aitable import upload,,aitable,prepare_import_upload,,OK
+import_data,aitable import data,,aitable,import_data,,OK
+get_views,aitable view list,aitable view get aggregate;aitable view get card;aitable view get field-widths;aitable view get fill-color-rule;aitable view get filter;aitable view get group;aitable view get sort;aitable view get timebar;aitable view get visible-fields,aitable,get_views,,OK
+create_view,aitable view create,,aitable,create_view,,OK
+update_view,aitable view update name,aitable view update filter;aitable view update group;aitable view update sort;aitable view update visible-fields,aitable,update_view,,OK
+delete_view,aitable view delete,,aitable,delete_view,,OK
+list_calendar_events,calendar event list,,calendar,list_calendar_events,,OK
+query_busy_status,calendar busy search,,calendar,query_busy_status,,OK
+query_available_meeting_room,calendar room search,,calendar,query_available_meeting_room,,OK
+list_meeting_room_groups,calendar room list-groups,,calendar,list_meeting_room_groups,,OK
+create_calendar_event,calendar event create,,calendar,create_calendar_event,,OK
+update_calendar_event,calendar event update,,calendar,update_calendar_event,,OK
+add_calendar_participant,calendar attendee add,,calendar,add_calendar_participant,,OK
+add_meeting_room,calendar room add,,calendar,add_meeting_room,,OK
+delete_meeting_room,calendar room delete,,calendar,delete_meeting_room,,OK
+remove_calendar_participant,calendar attendee delete,,calendar,remove_calendar_participant,,OK
+delete_calendar_event,calendar event delete,,calendar,delete_calendar_event,,OK
+get_current_user_profile,contact user get-self,,contact,get_current_user_profile,,OK
+search_user_by_key_word,contact user search,,,,服务端现名 search_contact_by_key_word；同族 shortcut: contact +search-user,OK
+search_contact_by_key_word,contact user search,,contact,search_contact_by_key_word,,OK
+search_user_by_mobile,contact user search-mobile,,contact,search_user_by_mobile,,OK
+get_user_info_by_user_ids,contact user get,,contact,get_user_info_by_user_ids,,OK
+search_dept_by_keyword,contact dept search,,contact,search_dept_by_keyword,,OK
+get_sub_depts_by_dept_id,contact dept list-children,,contact,get_sub_depts_by_dept_id,,OK
+get_dept_members_by_deptId,contact dept list-members,,contact,get_dept_members_by_deptId,,OK
+get_org_labels,contact label list,,,,原子命令；shortcut: contact +list-roles,OK
+search_label_by_name,contact label get,,,,原子命令,OK
+get_label_members_by_labelId,contact label list-members,,,,原子命令；shortcut: contact +list-role-members,OK
+get_user_todos_in_current_org,todo task list,,todo,get_user_todos_in_current_org,,OK
+query_todo_detail,todo task get,,,,rpc 现名 get_todo_detail,OK
+create_personal_todo,todo task create,,todo,create_personal_todo,,OK
+update_todo_task,todo task update,,todo,update_todo_task,,OK
+update_todo_done_status,todo task done,,todo,update_todo_done_status,,OK
+delete_todo,todo task delete,,todo,delete_todo,,OK
+search_documents,doc search,wiki node search,doc,search_documents,,OK
+list_nodes,doc list,wiki node list,doc,list_nodes,,OK
+get_document_info,doc info,,doc,get_document_info,,OK
+get_document_content,doc read,,doc,get_document_content,,OK
+list_document_blocks,doc block list,,doc,list_document_blocks,,OK
+create_document,doc create,,doc,create_document,,OK
+create_folder,doc folder create,drive mkdir,doc,create_folder,,OK
+create_file,doc file create,wiki node create,doc,create_file,,OK
+update_document,doc update,,doc,update_document,,OK
+insert_document_block,doc block insert,,doc,insert_document_block,,OK
+update_document_block,doc block update,,doc,update_document_block,,OK
+delete_document_block,doc block delete,,doc,delete_document_block,,OK
+get_file_upload_info,doc upload,,,,doc upload 内部第一步调用,OK
+commit_uploaded_file,doc upload,,,,doc upload 内部第二步调用,OK
+download_file,doc download,drive download,doc,download_file,,OK
+list_user_mailboxes,mail mailbox list,,mail,list_user_mailboxes,,OK
+search_emails,mail message search,,mail,search_emails,,OK
+get_email_by_message_id,mail message get,,mail,get_email_by_message_id,,OK
+send_email,mail message send,,mail,send_email,,OK
+list_user_visible_process,oa approval list-forms,,oa,list_user_visible_process,,OK
+list_pending_approvals,oa approval list-pending,,oa,get_todo_tasks,,OK
+get_processInstance_detail,oa approval detail,,oa,get_processInstance_detail,,OK
+get_processInstance_records,oa approval records,,oa,get_processInstance_records,,OK
+list_initiated_instances,oa approval list-initiated,,oa,list_initiated_instances,,OK
+list_pending_tasks,oa approval tasks,,oa,list_pending_tasks,,OK
+approve_processInstance,oa approval approve,,oa,approve_processInstance,,OK
+reject_processInstance,oa approval reject,,oa,reject_processInstance,,OK
+revoke_processInstance,oa approval revoke,,oa,revoke_processInstance,,OK
+search_groups_by_keyword,chat search,,,,内部走 im/search_groups,OK
+get_group_members,chat group members,,,,原子命令；shortcut: chat +group-members,OK
+list_conversation_message,chat message list,,,,DWS 已切换到 v2（list_conversation_message_v2）,OK
+list_conversation_message_v2,chat message list,,chat,list_conversation_message_v2,,OK
+list_individual_chat_message,chat message list-direct,,chat,list_individual_chat_message,,OK
+list_topic_replies,chat thread list-replies,,chat,list_topic_replies,,OK
+create_internal_org_group,,,,,未封装；近似 chat group create,未封装
+create_internal_group,,,,,未封装；近似 chat group create,未封装
+update_group_name,chat group rename,,chat,update_group_name,,OK
+add_group_member,chat group members add,,chat,add_group_member,,OK
+send_message_as_user,,,,,未封装；近似 chat message send,未封装
+send_direct_message_as_user,,,,,未封装；近似 chat message send,未封装
+send_group_message_as_user_test,,,,,未封装（内部测试工具）；近似 chat message send,未封装
+remove_group_member,chat group members remove,,chat,remove_group_member,,OK
+batch_send_robot_msg_to_users,chat +messages-batch-send-by-bot,,,,bot 服务,OK
+send_robot_group_message,chat message send-by-bot,,,,bot 服务,OK
+send_message_by_custom_robot,chat message send-by-webhook,,chat,send_message_by_custom_robot,,OK
+batch_recall_robot_users_msg,chat +messages-batch-recall-by-bot,,,,bot 服务,OK
+recall_robot_group_message,chat message recall-by-bot,,,,bot 服务,OK
+add_robot_to_group,chat group members add-bot,,chat,add_robot_to_group,,OK
+send_ding_message,ding message send,,ding,send_ding_message,,OK
+recall_ding_message,ding message recall,,ding,recall_ding_message,,OK
+search_my_robots,chat bot search,,chat,search_my_robots,,OK
+list_my_created_minutes,minutes list mine,,,,rpc list_by_keyword_and_time_range,OK
+list_by_keyword_range,minutes list all,,,,rpc list_by_keyword_and_time_range（可访问范围）,OK
+list_shared_minutes,minutes list shared,,minutes,list_by_keyword_and_time_range,,OK
+get_minutes_basic_info,minutes get info,,minutes,get_minutes_basic_info,,OK
+get_minutes_keywords,minutes get keywords,,minutes,get_minutes_keywords,,OK
+batch_get_minutes_details,minutes get batch,,minutes,batch_get_minutes_details,,OK
+get_minutes_ai_summary,minutes get summary,,minutes,get_minutes_ai_summary,,OK
+get_minutes_transcription,minutes get transcription,,minutes,get_minutes_transcription,,OK
+list_minutes_todos,minutes get todos,,minutes,list_minutes_todos,,OK
+update_minutes_title,minutes update title,,minutes,update_minutes_title,,OK
+update_minutes_summary,minutes update summary,,minutes,update_minutes_summary,,OK
+create_mind_graph,minutes mind-graph create,,minutes,create_mind_graph,,OK
+query_mind_graph_status,minutes mind-graph status,,minutes,query_mind_graph_status,,OK
+replace_speaker,minutes speaker replace,,minutes,replace_speaker,,OK
+add_personal_hot_word,minutes hot-word add,,minutes,add_personal_hot_word,,OK
+replace_minutes_text,minutes replace-text,,minutes,replace_minutes_text,,OK
+create_upload_session,minutes upload create,minutes upload create-and-notify,minutes,create_upload_session,,OK
+complete_upload_session,minutes upload complete,,minutes,complete_upload_session,,OK
+cancel_upload_session,minutes upload cancel,,minutes,cancel_upload_session,,OK
+get_available_report_templates,report template list,,report,get_available_report_templates,,OK
+get_template_details_by_name,report template get,,report,get_template_details_by_name,,OK
+get_received_report_list,report inbox list,,report,get_received_report_list,,OK
+get_send_report_list,report outbox list,,report,get_send_report_list,,OK
+get_report_entry_details,report entry get,,report,get_report_entry_details,,OK
+get_report_statistics_by_id,report entry stats,,report,get_report_statistics_by_id,,OK
+create_report,report entry submit,,report,create_report,,OK
+query_attendance_group_or_rules,attendance rules,,attendance,query_attendance_group_or_rules,,OK
+get_user_attendance_record,attendance record get,,attendance,get_user_attendance_record,,OK
+batch_get_employee_shifts,attendance shift list,,attendance,batch_get_employee_shifts,,OK
+get_attendance_summary,attendance summary,,attendance,,,OK
+list_files,drive list,,drive,,,OK
+list_spaces,drive list-spaces,,drive,list_spaces,,OK
+get_file_info,drive info,,drive,get_file_info,,OK
+get_upload_info,drive upload-info,,drive,get_upload_info,,OK
+commit_upload,drive commit,,drive,commit_upload,,OK
+search_open_platform_docs,devdoc article search,dev doc search,devdoc,search_open_platform_docs,,OK
+search_open_platform_error_code,,,,,未封装；近似 devdoc article search,未封装
+get_my_lives,live stream list,,live,get_my_lives,,OK
+create_group_conversation,chat group create,chat thread create-group,chat,create_group_conversation,,OK
+enterprise_person_search,aisearch person,,aisearch,enterprise_person_search,,OK
+search_enterprise_behavior,aisearch behavior,,aisearch,search_enterprise_behavior,,OK
+search_enterprise_group,,,,,未封装（ai-search 服务端共 5 个工具，DWS 只封装 3 个）,未封装

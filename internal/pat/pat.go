@@ -52,10 +52,13 @@ func RegisterCommands(root *cobra.Command, c edition.ToolCaller) {
 		Long: `管理行为授权（PAT）。
 
 命令结构:
+  dws pat grant <scope>    通过 grantAuth 授予单个权限
   dws pat chmod <scope>...  授予指定权限
   dws pat browser-policy    配置 PAT 浏览器打开策略
 
 能力说明：
+  pat grant 直接调用旧 pat.grant / grantAuth，只接受一个 scope；
+  使用 --dry-run 预览请求，确认后使用 --yes 执行。
   pat chmod 默认输出轻量授权摘要；显式 --format json / --verbose 时，
   才返回服务端完整 JSON（含逐 scope 明细），便于机器校验。
   pat chmod 支持批量授权：可一次传多个 scope，也可通过
@@ -101,6 +104,7 @@ DWS_CHANNEL 只用于上游 channelCode。`,
 	})
 
 	patCmd.AddCommand(newChmodCommand(c))
+	patCmd.AddCommand(newGrantCommand(c))
 	patCmd.AddCommand(newBrowserPolicyCommand())
 	// Shortcuts are mounted before this open-source PAT tree in the app. Fold
 	// that pre-existing service group into the native PAT parent so Cobra and
